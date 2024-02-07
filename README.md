@@ -92,7 +92,7 @@ jupyter notebook
 10. Execute the necessary code snippets within the Jupyter Notebook.
 ## Authors
 
-- [Karam ](https://www.github.com/octokatherine)
-- [Majed ](https://www.github.com/octokatherine)
+- [Karam ](https://www.github.com/karamalqinneh)
+- [Majid ](https://www.github.com/octokatherine)
 - [Abduallah ](https://www.github.com/octokatherine)
 - [Mahmoud ](https://www.github.com/octokatherine)

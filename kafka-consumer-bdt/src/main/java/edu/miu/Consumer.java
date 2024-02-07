@@ -20,7 +20,7 @@ public class Consumer {
 
     public static void main(String[] args) throws Exception {
         ObjectMapper objectMapper = CustomObjectMapper.getMapper();
-        SparkConf conf = new SparkConf().setAppName("first-topic-listener");
+        SparkConf conf = new SparkConf().setAppName("main-pipeline");
         JavaSparkContext jsc = new JavaSparkContext(conf);
         JavaStreamingContext ssc = new JavaStreamingContext(jsc, Durations.seconds(5));
 
@@ -29,16 +29,16 @@ public class Consumer {
         kafkaParams.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "StringDeserializer");
         kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "StringDeserializer");
-        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, "group1");
+        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, "main-group");
 
         HbaseTable.init();
         JavaPairInputDStream<String, String> stream = KafkaUtils.createDirectStream(ssc, String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams, topics);
 
         stream.foreachRDD(rdd -> {
-            JavaRDD<Product> jrdd = rdd
+            JavaRDD<Product> inner = rdd
                     .filter(f -> f._2 != null && !f._2.isEmpty())
                     .map(f -> objectMapper.readValue(f._2(), Product.class));
-            jrdd.foreach(HbaseTable::populateData);
+            inner.foreach(HbaseTable::populateData);
             return null;
         });
 

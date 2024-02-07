@@ -33,44 +33,47 @@ public class SparkSql {
 		SQLContext sqlContext = new SQLContext(jsc.sc());
 
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD = readTableByJavaPairRDD(jsc);
-		System.out.println("Number of rows in hbase table: " + hBaseRDD.count());
 
 		JavaRDD<Product> rows = hBaseRDD.map(row -> {
 			Product product = new Product();
-			byte[] rowKey = row._1.get();
-			Result result = row._2;
+			try {
+				byte[] rowKey = row._1.get();
+				Result result = row._2;
 
-			product.setInvoiceId(Bytes.toString(rowKey));
-			product.setProductId(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("productId"))));
-			product.setProductName(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("productName"))));
-			product.setQuantity(Bytes.toInt(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("quantity"))));
-			product.setDate(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("date"))));
-			product.setPrice(Bytes.toDouble(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("price"))));
+				product.setInvoiceId(Bytes.toString(rowKey));
+				product.setProductId(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("productId"))));
+				product.setProductName(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("productName"))));
+				product.setQuantity(Integer.parseInt(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("quantity")))));
+				product.setDate(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("date"))));
+				product.setPrice(Double.parseDouble(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_PRODUCT), Bytes.toBytes("price")))));
 
-			// Extract customer info from 'customer_info' column family
-			product.setCustomerId(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_CUSTOMER), Bytes.toBytes("customerId"))));
-			product.setCountry(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_CUSTOMER), Bytes.toBytes("country"))));
+				// Extract customer info from 'customer_info' column family
+				product.setCustomerId(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_CUSTOMER), Bytes.toBytes("customerId"))));
+				product.setCountry(Bytes.toString(result.getValue(Bytes.toBytes(COLUMN_FAMILY_CUSTOMER), Bytes.toBytes("country"))));
 
-			return product;
+				return product;
+			} catch (Exception e) {
+				return product;
+			}
 		});
 
 		DataFrame tableData = sqlContext.createDataFrame(rows, Product.class);
 		tableData.registerTempTable(TABLE_NAME);
 		tableData.printSchema();
 
-		String sqlQuery1 = "SELECT * FROM retail_data WHERE quantity > 5";
+		String sqlQuery1 = "SELECT * FROM retail_data LIMIT 100";
 		String sqlQuery2 = "SELECT * FROM retail_data WHERE quantity > 5 AND country = 'United Kingdom'";
 		String sqlQuery3 = "SELECT country, SUM(quantity) AS TotalQuantity, SUM(quantity * price) AS TotalRevenue "
 				+ "FROM retail_data GROUP BY country";
 
-		DataFrame query2 = sqlContext.sql(sqlQuery1);
-		query2.show();
+		DataFrame query1 = sqlContext.sql(sqlQuery1);
+		query1.show();
 
-		DataFrame query3 = sqlContext.sql(sqlQuery2);
-		query3.show();
+        DataFrame query2 = sqlContext.sql(sqlQuery2);
+        query2.show();
 
-		DataFrame query4 = sqlContext.sql(sqlQuery3);
-		query4.show();
+        DataFrame query3 = sqlContext.sql(sqlQuery3);
+        query3.show();
 
 		jsc.stop();
 	}
