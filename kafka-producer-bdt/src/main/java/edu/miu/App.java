@@ -10,7 +10,7 @@ public class App {
 
         new Thread(() -> {
             Publisher kafkaPublisher = new Publisher(data.getQueue());
-            kafkaPublisher.publish("test");
+            kafkaPublisher.publish("retail"); // minor fix
         }).start();
 
     }
